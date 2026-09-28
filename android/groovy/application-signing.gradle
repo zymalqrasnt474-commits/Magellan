@@ -22,10 +22,51 @@ android {
     release {
       if (securityPropertiesFileExists) {
         println('The release signing keys are available')
-        storeFile signingStoreFile(spropStoreFile)
-        storePassword spropStorePassword
-        keyAlias spropKeyAlias
-        keyPassword spropKeyPassword
+
+        // Load properties from secure.properties in a robust way (accept multiple key names)
+        def props = new Properties()
+        securityPropertiesFile.withInputStream { props.load(it) }
+
+        def findProp = { String... keys ->
+          // 1) check for variables bound by apply from: secure.properties
+          for (k in keys) {
+            if (this.hasProperty(k) && this."${k}" != null && "${this."${k}"}".toString().trim()) {
+              return "${this."${k}"}".toString().trim()
+            }
+          }
+          // 2) check properties file with exact and case-insensitive keys
+          for (k in keys) {
+            if (props.containsKey(k) && props.getProperty(k).toString().trim()) {
+              return props.getProperty(k).toString().trim()
+            }
+            // case-insensitive match
+            for (entryKey in props.stringPropertyNames()) {
+              if (entryKey.equalsIgnoreCase(k) && props.getProperty(entryKey).toString().trim()) {
+                return props.getProperty(entryKey).toString().trim()
+              }
+            }
+          }
+          return null
+        }
+
+        def storeFileProp = findProp('spropStoreFile','storeFile','keystore','keystoreFile','release.keystore','keystorePath')
+        def storePasswordProp = findProp('spropStorePassword','storePassword','storepass','keystorePassword','keyStorePassword')
+        def keyAliasProp = findProp('spropKeyAlias','keyAlias','alias','keyAliasName')
+        def keyPasswordProp = findProp('spropKeyPassword','keyPassword','keypass','aliasPassword')
+
+        if (storeFileProp && storePasswordProp && keyAliasProp && keyPasswordProp) {
+          def resolvedStore = signingStoreFile(storeFileProp)
+          if (!resolvedStore.exists()) {
+            throw new GradleException("Keystore file not found: ${resolvedStore} (spropStoreFile='${storeFileProp}')")
+          }
+          storeFile resolvedStore
+          storePassword storePasswordProp
+          keyAlias keyAliasProp
+          keyPassword keyPasswordProp
+        } else {
+          println('The release signing keys are unavailable or incomplete; release signing will be skipped.')
+        }
+
       } else {
         println('The release signing keys are unavailable')
       }
