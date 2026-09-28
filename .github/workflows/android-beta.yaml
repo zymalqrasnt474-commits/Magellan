@@ -58,7 +58,27 @@ jobs:
       - name: Restore beta keys
         shell: bash
         run: |
-          echo "$PRIVATE_H" | base64 -d > private.h
+          # Only overwrite private.h if PRIVATE_H secret is non-empty, valid base64,
+          # and actually defines the macros we need.
+          if [[ -n "$PRIVATE_H" ]]; then
+            if echo "$PRIVATE_H" | base64 -d > private.h.candidate 2>/dev/null; then
+              if grep -q '^#define METASERVER_URL ' private.h.candidate && \
+                 grep -q '^#define DEFAULT_URLS_JSON ' private.h.candidate; then
+                mv private.h.candidate private.h
+                echo "Restored private.h from secret."
+              else
+                echo "PRIVATE_H secret provided but missing required defines; keeping checked-in private.h"
+                rm -f private.h.candidate
+              fi
+            else
+              echo "PRIVATE_H secret is not valid base64; keeping checked-in private.h"
+              rm -f private.h.candidate 2>/dev/null || true
+            fi
+          else
+            echo "PRIVATE_H not set; keeping checked-in private.h"
+          fi
+
+          # Restore other artifacts.
           echo "$FIREBASE_APP_DISTRIBUTION_JSON" | base64 -d > android/app/firebase-app-distribution.json
           echo "$GOOGLE_SERVICES_JSON" | base64 -d > android/app/google-services.json
           echo "$SECURE_PROPERTIES" | base64 -d > android/app/secure.properties
