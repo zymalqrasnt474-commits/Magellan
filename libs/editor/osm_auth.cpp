@@ -125,8 +125,18 @@ OsmOAuth OsmOAuth::ProductionServerAuth()
 {
   constexpr char const * kOsmMainSiteURL = "https://www.openstreetmap.org";
   constexpr char const * kOsmApiURL = "https://api.openstreetmap.org";
+
+#if defined(OSM_OAUTH2_CLIENT_ID) && defined(OSM_OAUTH2_CLIENT_SECRET) && \
+    defined(OSM_OAUTH2_SCOPE) && defined(OSM_OAUTH2_REDIRECT_URI)
   return {OSM_OAUTH2_CLIENT_ID,    OSM_OAUTH2_CLIENT_SECRET, OSM_OAUTH2_SCOPE,
           OSM_OAUTH2_REDIRECT_URI, kOsmMainSiteURL,          kOsmApiURL};
+#else
+  // CI/build server or local developer machine may not have production OAuth2 macros.
+  // Return empty OAuth2 params (safe fallback). This avoids embedding secrets in the repo
+  // while allowing the project to be built. OAuth flows will be disabled until valid
+  // credentials are provided at runtime or via build-time config.
+  return {"", "", "", "", kOsmMainSiteURL, kOsmApiURL};
+#endif
 }
 
 void OsmOAuth::SetAuthToken(string const & oauthToken)
