@@ -286,6 +286,12 @@ public final class Map
     nativeRotate(0.0, true);
   }
 
+  /** Returns current map rotation angle in radians. 0 = north. */
+  public static double getViewportRotationAngle()
+  {
+    return nativeGetViewportRotationAngle();
+  }
+
   public static void onScale(double factor, double focusX, double focusY, boolean isAnim)
   {
     nativeOnScale(factor, focusX, focusY, isAnim);
@@ -403,6 +409,7 @@ public final class Map
 
   // Rotation
   private static native void nativeRotate(double azimuth, boolean isAnim);
+  private static native double nativeGetViewportRotationAngle();
 
   // Events
   private static native void nativeScalePlus();
