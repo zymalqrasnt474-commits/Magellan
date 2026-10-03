@@ -122,6 +122,12 @@ JNIEXPORT void Java_app_organicmaps_sdk_Map_nativeRotate(JNIEnv *, jclass, jdoub
   g_framework->NativeFramework()->Rotate(azimuth, isAnim);
 }
 
+JNIEXPORT jdouble Java_app_organicmaps_sdk_Map_nativeGetViewportRotationAngle(JNIEnv *, jclass)
+{
+  return g_framework->NativeFramework()->GetCurrentModelView().GetAngle();
+}
+
+
 JNIEXPORT void Java_app_organicmaps_sdk_Map_nativeScalePlus(JNIEnv *, jclass)
 {
   g_framework->Scale(::Framework::SCALE_MAG);
