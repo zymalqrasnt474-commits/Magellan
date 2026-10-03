@@ -214,12 +214,13 @@ public class MapButtonsController extends Fragment
     case north:
       UiUtils.showIf(show, buttonView);
       break;
-    case search: mSearchWheel.show(show);
+    case search: mSearchWheel.show(show); break;
     case bookmarks:
     case menu: UiUtils.showIf(show, buttonView); break;
     case trackRecordingStatus:
       UiUtils.showIf(show, buttonView);
       animateIconBlinking(show, (FloatingActionButton) buttonView);
+      break;
     }
   }
 
