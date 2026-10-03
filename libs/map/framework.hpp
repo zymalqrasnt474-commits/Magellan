@@ -553,6 +553,7 @@ public:
                          bool trackVisibleViewport = false);
 
   m2::RectD GetCurrentViewport() const;
+  double GetViewportAngle() const { return m_currentModelView.GetAngle(); }
   void SetVisibleViewport(m2::RectD const & rect);
 
   void ShowRect(m2::RectD const & rect, bool animation = true, bool useVisibleViewport = false);
