@@ -1638,7 +1638,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
   public void onCompassUpdated(double north)
   {
     Map.onCompassUpdated(north, false);
-    MapButtonsController mbc = (MapButtonsController) getSupportFragmentManager().findFragmentById(R.id.map_buttons_fragment);
+    MapButtonsController mbc = (MapButtonsController) getSupportFragmentManager().findFragmentById(R.id.map_buttons);
     if (mbc != null)
       mbc.updateNorthButtonVisibility(Math.toDegrees(north));
   }
