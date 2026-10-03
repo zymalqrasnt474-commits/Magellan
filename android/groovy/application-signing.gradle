@@ -79,12 +79,16 @@ android {
             signingConfig = signingConfigs.debug
         }
         release {
-            signingConfig = signingConfigs.release
+            // When no valid keystore is configured, the release config is empty.
+            // Fall back to debug signing so the APK can still be assembled.
+            signingConfig = (signingConfigs.release.storeFile != null) ?
+                signingConfigs.release : signingConfigs.debug
         }
         beta {
             applicationIdSuffix '.beta'
             versionNameSuffix '-beta'
-            signingConfig = signingConfigs.release
+            signingConfig = (signingConfigs.release.storeFile != null) ?
+                signingConfigs.release : signingConfigs.debug
         }
     }
 }
