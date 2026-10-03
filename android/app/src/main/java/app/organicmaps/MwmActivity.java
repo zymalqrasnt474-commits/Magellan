@@ -1656,7 +1656,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
         {
           double angleRad = Map.getViewportRotationAngle();
           // Normalize angle to 0-360 degrees (same as C++ CompassHandle)
-          double angleDeg = Math.toDegrees(ang::AngleIn2PI(angleRad));
+          double angleDeg = Math.toDegrees(((angleRad % (2 * Math.PI)) + (2 * Math.PI)) % (2 * Math.PI));
           // For negative values, add 360
           if (angleDeg < 0)
             angleDeg += 360.0;
