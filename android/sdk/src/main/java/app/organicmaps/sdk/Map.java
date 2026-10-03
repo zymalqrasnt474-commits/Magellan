@@ -222,9 +222,9 @@ public final class Map
     mMapRenderingListener = mapRenderingListener;
   }
 
-  public void setCallbackUnsupported(CallbackUnsupported callback)
+  public void setCallbackUnsupported(CallbackUnsupported callbackUnsupported)
   {
-    mCallbackUnsupported = callback;
+    mCallbackUnsupported = callbackUnsupported;
   }
 
   public void onCreate(boolean launchByDeeplink)
@@ -278,6 +278,12 @@ public final class Map
   public static void zoomOut()
   {
     nativeScaleMinus();
+  }
+
+  /** Resets the map rotation back to north with animation. */
+  public static void resetToNorth()
+  {
+    nativeRotate(0.0, true);
   }
 
   public static void onScale(double factor, double focusX, double focusY, boolean isAnim)
@@ -394,6 +400,9 @@ public final class Map
   private static native void nativeSetupWidget(int widget, float x, float y, int anchor);
 
   private static native void nativeCompassUpdated(double north, boolean forceRedraw);
+
+  // Rotation
+  private static native void nativeRotate(double azimuth, boolean isAnim);
 
   // Events
   private static native void nativeScalePlus();
