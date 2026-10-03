@@ -74,6 +74,8 @@ import app.organicmaps.routing.RoutingErrorDialogFragment;
 import app.organicmaps.routing.RoutingPlanController;
 import app.organicmaps.routing.RoutingPlanFragment;
 import app.organicmaps.routing.RoutingPlanViewModel;
+import android.os.Handler;
+import android.os.Looper;
 import app.organicmaps.sdk.ChoosePositionMode;
 import app.organicmaps.sdk.Framework;
 import app.organicmaps.sdk.Map;
@@ -173,6 +175,11 @@ public class MwmActivity extends BaseMwmFragmentActivity
   private SearchPageViewModel mSearchPageViewModel;
   private MapButtonsViewModel mMapButtonsViewModel;
   private MapButtonsController.LayoutMode mPreviousMapLayoutMode;
+
+  // Viewport rotation polling for gesture-rotation detection
+  private Handler mViewportPollHandler;
+  private Runnable mViewportPollRunnable;
+  private static final int VIEWPORT_POLL_INTERVAL_MS = 500;
 
   @Nullable
   private WindowInsetsCompat mCurrentWindowInsets;
@@ -1016,6 +1023,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
     refreshLightStatusBar();
 
     MwmApplication.from(this).getSensorHelper().addListener(this);
+    startViewportRotationPolling();
   }
 
   @Override
@@ -1031,6 +1039,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
     if (mOnmapDownloader != null)
       mOnmapDownloader.onPause();
     MwmApplication.from(this).getSensorHelper().removeListener(this);
+    stopViewportRotationPolling();
     dismissLocationErrorDialog();
     dismissAlertDialog();
     super.onPause();
@@ -1633,6 +1642,45 @@ public class MwmActivity extends BaseMwmFragmentActivity
    * Called when compass data is updated.
    * @param north offset from the north
    */
+  private void startViewportRotationPolling()
+  {
+    if (mViewportPollHandler != null)
+      return;
+    mViewportPollHandler = new Handler(Looper.getMainLooper());
+    mViewportPollRunnable = new Runnable()
+    {
+      @Override
+      public void run()
+      {
+        if (Map.isEngineCreated())
+        {
+          double angleRad = Map.getViewportRotationAngle();
+          // Normalize angle to 0-360 degrees (same as C++ CompassHandle)
+          double angleDeg = Math.toDegrees(ang::AngleIn2PI(angleRad));
+          // For negative values, add 360
+          if (angleDeg < 0)
+            angleDeg += 360.0;
+          MapButtonsController mbc = (MapButtonsController) getSupportFragmentManager().findFragmentById(R.id.map_buttons);
+          if (mbc != null)
+            mbc.updateNorthButtonVisibility(angleDeg);
+        }
+        if (mViewportPollHandler != null)
+          mViewportPollHandler.postDelayed(this, VIEWPORT_POLL_INTERVAL_MS);
+      }
+    };
+    mViewportPollHandler.postDelayed(mViewportPollRunnable, VIEWPORT_POLL_INTERVAL_MS);
+  }
+
+  private void stopViewportRotationPolling()
+  {
+    if (mViewportPollHandler != null)
+    {
+      mViewportPollHandler.removeCallbacks(mViewportPollRunnable);
+      mViewportPollHandler = null;
+      mViewportPollRunnable = null;
+    }
+  }
+
   @Override
   @UiThread
   public void onCompassUpdated(double north)
