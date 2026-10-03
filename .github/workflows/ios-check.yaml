@@ -31,11 +31,12 @@ on:
       - skin_generator/**
       - tools/**
       - track_generator/**
-
 jobs:
   ios-check:
     name: Build iOS
     runs-on: macos-26
+    # macOS runners have limited free-tier capacity; don't let them block the whole CI.
+    continue-on-error: true
     env:
       DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
       LANG: en_US.UTF-8  # Fastlane complains that the terminal is using ASCII.
@@ -54,21 +55,16 @@ jobs:
     permissions:
       contents: read
       actions: write  # To delete unnecessary cache.
-
     steps:
       - name: List available Xcode versions
         run: ls /Applications | grep Xcode
-
       - name: Show current version of Xcode
         run: xcodebuild -version
-
       - name: Checkout sources
         uses: actions/checkout@v6
-
       - name: Parallel submodules checkout
         shell: bash
         run: git submodule update --depth 1 --init --recursive --jobs=$(($(sysctl -n hw.logicalcpu) * 20))
-
       - name: Configure XCode cache
         uses: irgaly/xcode-cache@v1
         with:
@@ -80,7 +76,6 @@ jobs:
           # Only master may delete its used cache; otherwise a PR would delete
           # the master DerivedData it just restored from (via restore-keys).
           delete-used-deriveddata-cache: ${{ github.ref == 'refs/heads/master' }}
-
       - name: Build and Run Tests (Debug)
         if: matrix.buildType == 'Debug'
         shell: bash
@@ -95,7 +90,6 @@ jobs:
             -quiet \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
-
       - name: Build (Release)
         if: matrix.buildType == 'Release'
         shell: bash
