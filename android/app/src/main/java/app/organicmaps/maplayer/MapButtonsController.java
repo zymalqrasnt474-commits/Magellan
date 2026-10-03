@@ -120,6 +120,14 @@ public class MapButtonsController extends Fragment
     mNavMyPosition =
         new MyPositionButton(myPosition, (v) -> mMapButtonClickListener.onMapButtonClick(MapButtons.myPosition));
 
+    // North/Compass button
+    final View northButton = mFrame.findViewById(R.id.nav_north);
+    if (northButton != null)
+    {
+      northButton.setOnClickListener((v) -> mMapButtonClickListener.onMapButtonClick(MapButtons.north));
+      northButton.setVisibility(View.GONE);
+    }
+
     // Some buttons do not exist in navigation mode
     mToggleMapLayerButton = mFrame.findViewById(R.id.layers_button);
     if (mToggleMapLayerButton != null)
@@ -167,6 +175,8 @@ public class MapButtonsController extends Fragment
     mButtonsMap.put(MapButtons.bookmarks, bookmarksButton);
     mButtonsMap.put(MapButtons.search, searchButton);
 
+    if (northButton != null)
+      mButtonsMap.put(MapButtons.north, northButton);
     if (mToggleMapLayerButton != null)
       mButtonsMap.put(MapButtons.toggleMapLayer, mToggleMapLayerButton);
     if (menuButton != null)
@@ -187,7 +197,6 @@ public class MapButtonsController extends Fragment
 
   public void showButton(boolean show, MapButtonsController.MapButtons button)
   {
-    // TODO(AB): Why do we need this check? Isn't it better to crash and fix the wrong logic ASAP?
     final View buttonView = mButtonsMap.get(button);
     if (buttonView == null)
       return;
@@ -202,6 +211,9 @@ public class MapButtonsController extends Fragment
       if (mNavMyPosition != null)
         mNavMyPosition.showButton(show);
       break;
+    case north:
+      UiUtils.showIf(show, buttonView);
+      break;
     case search: mSearchWheel.show(show);
     case bookmarks:
     case menu: UiUtils.showIf(show, buttonView); break;
@@ -209,6 +221,22 @@ public class MapButtonsController extends Fragment
       UiUtils.showIf(show, buttonView);
       animateIconBlinking(show, (FloatingActionButton) buttonView);
     }
+  }
+
+  /**
+   * Shows or hides the north/compass button based on map rotation.
+   * @param angleDeg Current map rotation angle in degrees (0 = north).
+   */
+  public void updateNorthButtonVisibility(double angleDeg)
+  {
+    final View northBtn = mButtonsMap.get(MapButtons.north);
+    if (northBtn == null)
+      return;
+    boolean show = angleDeg > 5.0 && angleDeg < 355.0;
+    if (show != UiUtils.isVisible(northBtn))
+      UiUtils.showIf(show, northBtn);
+    if (show && northBtn instanceof FloatingActionButton)
+      northBtn.setRotation((float) angleDeg);
   }
 
   void animateIconBlinking(boolean show, @NonNull FloatingActionButton button)
@@ -249,7 +277,6 @@ public class MapButtonsController extends Fragment
   {
     final View menuButton = mButtonsMap.get(MapButtons.menu);
     final Context context = getContext();
-    // Sometimes the global layout listener fires when the fragment is not attached to a context
     if (menuButton == null || context == null)
       return;
     final UpdateInfo info = MapManager.nativeGetUpdateInfo(null);
@@ -274,7 +301,6 @@ public class MapButtonsController extends Fragment
   {
     final View menuButton = mButtonsMap.get(MapButtons.menu);
     final Context context = getContext();
-    // Sometimes the global layout listener fires when the fragment is not attached to a context
     if (menuButton == null || context == null)
       return;
     final UpdateInfo info = MapManager.nativeGetUpdateInfo(null);
@@ -311,7 +337,6 @@ public class MapButtonsController extends Fragment
     else
     {
       helpButton.setImageResource(app.organicmaps.branding.R.drawable.logo);
-      // Keep this button colorful in normal theme.
       if (!ThemeUtils.isDarkTheme(requireContext()))
         helpButton.getDrawable().setTintList(null);
     }
@@ -358,7 +383,6 @@ public class MapButtonsController extends Fragment
     if (RoutingController.get().isNavigating() || mContentHeight == 0)
       return;
     final boolean pp = Boolean.TRUE.equals(mRoutingPlanViewModel.getIsPlacePageActive().getValue());
-    // don't apply move in landscape
     if (!shouldActivate == pp || getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE)
       return;
     if (mInnerRightButtonsFrame != null)
@@ -404,12 +428,12 @@ public class MapButtonsController extends Fragment
       if (button.getParent() == parent)
       {
         int toleranceOffset = 0;
-        // Allow offset tolerance for zoom buttons
         switch (entry.getKey())
         {
         case zoomIn:
         case zoomOut:
         case zoom: toleranceOffset = -140; break;
+        case north: toleranceOffset = -200; break;
         }
         showButton(getViewTopOffset(translation, button) >= toleranceOffset, entry.getKey());
       }
@@ -452,10 +476,6 @@ public class MapButtonsController extends Fragment
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState)
   {
     super.onViewCreated(view, savedInstanceState);
-    // FragmentStateManager requests insets for the frame before onViewCreated(), but the dispatch
-    // itself only happens on the next layout pass — so a listener attached here still receives it.
-    // Attaching in onResume() is too late: the dispatch has already run and nothing re-requests
-    // insets for an already attached view, leaving the padding at zero.
     ViewCompat.setOnApplyWindowInsetsListener(
         view, WindowInsetUtils.PaddingInsetsListener.allSides(WindowInsetsCompat.Type.systemBars()
                                                               | WindowInsetsCompat.Type.displayCutout()));
@@ -524,7 +544,8 @@ public class MapButtonsController extends Fragment
     bookmarks,
     menu,
     help,
-    trackRecordingStatus
+    trackRecordingStatus,
+    north
   }
 
   public interface MapButtonClickListener
@@ -545,8 +566,8 @@ public class MapButtonsController extends Fragment
     }
 
     @Override
-    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight,
-                               int oldBottom)
+    public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop,
+                               int oldRight, int oldBottom)
     {
       mContentHeight = bottom - top;
       mContentWidth = right - left;
