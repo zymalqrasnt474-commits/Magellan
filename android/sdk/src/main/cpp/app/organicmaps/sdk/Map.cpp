@@ -124,7 +124,7 @@ JNIEXPORT void Java_app_organicmaps_sdk_Map_nativeRotate(JNIEnv *, jclass, jdoub
 
 JNIEXPORT jdouble Java_app_organicmaps_sdk_Map_nativeGetViewportRotationAngle(JNIEnv *, jclass)
 {
-  return g_framework->NativeFramework()->GetCurrentModelView().GetAngle();
+  return g_framework->NativeFramework()->GetViewportAngle();
 }
 
 
