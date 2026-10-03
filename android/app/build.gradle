@@ -8,10 +8,14 @@ def googleFirebaseServicesFlag = findProperty('firebase')
 // Enable Firebase for all beta flavors except fdroid only if google-services.json
 // exists AND contains valid JSON (an empty/invalid file crashes the plugin).
 def googleServicesFile = file("$projectDir/google-services.json")
-def googleFirebaseServicesDefault = isBeta && !isFdroid && googleServicesFile.exists() && googleServicesFile.length() > 2
-ext.googleFirebaseServicesEnabled = googleFirebaseServicesFlag != null ?
-    googleFirebaseServicesFlag == '' || googleFirebaseServicesFlag.toBoolean() :
-    googleFirebaseServicesDefault
+def googleServicesFileValid = googleServicesFile.exists() && googleServicesFile.length() > 2
+def googleFirebaseServicesDefault = isBeta && !isFdroid && googleServicesFileValid
+// Even if -Pfirebase=true is set, Firebase is only enabled when google-services.json is valid.
+// An empty/malformed file crashes the google-services plugin at "processXxxGoogleServices".
+ext.googleFirebaseServicesEnabled = googleServicesFileValid &&
+    (googleFirebaseServicesFlag != null ?
+        (googleFirebaseServicesFlag == '' || googleFirebaseServicesFlag.toBoolean()) :
+        googleFirebaseServicesDefault)
 
 apply plugin: 'com.android.application'
 apply plugin: 'com.github.triplet.play'
