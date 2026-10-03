@@ -117,6 +117,11 @@ JNIEXPORT void Java_app_organicmaps_sdk_Map_nativeCompassUpdated(JNIEnv *, jclas
   g_framework->OnCompassUpdated(info, forceRedraw);
 }
 
+JNIEXPORT void Java_app_organicmaps_sdk_Map_nativeRotate(JNIEnv *, jclass, jdouble azimuth, jboolean isAnim)
+{
+  g_framework->NativeFramework()->Rotate(azimuth, isAnim);
+}
+
 JNIEXPORT void Java_app_organicmaps_sdk_Map_nativeScalePlus(JNIEnv *, jclass)
 {
   g_framework->Scale(::Framework::SCALE_MAG);
