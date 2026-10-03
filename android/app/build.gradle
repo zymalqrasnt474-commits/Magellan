@@ -5,8 +5,10 @@ def isBeta = taskName.contains('beta')
 
 // Firebase Crashlytics compile-time feature flag: -Pfirebase=true|false
 def googleFirebaseServicesFlag = findProperty('firebase')
-// Enable Firebase for all beta flavors except fdroid only if google-services.json exists.
-def googleFirebaseServicesDefault = isBeta && !isFdroid && file("$projectDir/google-services.json").exists()
+// Enable Firebase for all beta flavors except fdroid only if google-services.json
+// exists AND contains valid JSON (an empty/invalid file crashes the plugin).
+def googleServicesFile = file("$projectDir/google-services.json")
+def googleFirebaseServicesDefault = isBeta && !isFdroid && googleServicesFile.exists() && googleServicesFile.length() > 2
 ext.googleFirebaseServicesEnabled = googleFirebaseServicesFlag != null ?
     googleFirebaseServicesFlag == '' || googleFirebaseServicesFlag.toBoolean() :
     googleFirebaseServicesDefault
