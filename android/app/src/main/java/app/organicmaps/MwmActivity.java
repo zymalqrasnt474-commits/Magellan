@@ -798,6 +798,7 @@ public class MwmActivity extends BaseMwmFragmentActivity
     {
     case zoomIn -> Map.zoomIn();
     case zoomOut -> Map.zoomOut();
+      case north -> Map.resetToNorth();
     case myPosition ->
     {
       Logger.i(LOCATION_TAG, "The location button pressed");
@@ -1637,6 +1638,9 @@ public class MwmActivity extends BaseMwmFragmentActivity
   public void onCompassUpdated(double north)
   {
     Map.onCompassUpdated(north, false);
+    MapButtonsController mbc = (MapButtonsController) getSupportFragmentManager().findFragmentById(R.id.map_buttons_fragment);
+    if (mbc != null)
+      mbc.updateNorthButtonVisibility(Math.toDegrees(north));
   }
 
   @Override
